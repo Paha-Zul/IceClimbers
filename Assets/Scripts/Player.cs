@@ -4,6 +4,7 @@ using System.Collections;
 public class Player : MonoBehaviour {
     public GameObject hook;
     public GameLevel levelScript;
+    public GameObject ropePrefab;
     public float ropeLength=2, ropeSpeed=0.1f;
 
     private bool aTap;
@@ -13,10 +14,14 @@ public class Player : MonoBehaviour {
     private Hook connectedHook;
     private float touchDownTime;
     private float holdDelay = 0.2f;
+    private GameObject rope;
+    private MeshRenderer ropeRenderer;
 
 	// Use this for initialization
 	void Start () {
         this.joint = GetComponent<DistanceJoint2D>();
+        this.rope = Instantiate(this.ropePrefab);
+        this.ropeRenderer = this.rope.transform.GetChild(0).GetComponent<MeshRenderer>();
 	}
 	
 	// Update is called once per frame
@@ -55,7 +60,11 @@ public class Player : MonoBehaviour {
             Time.timeScale = 0;
         }
 
-        ReelInHook();
+        if (this.connectedHook != null && this.joint != null)
+        {
+            ReelInHook();
+            MakeRope();
+        }
     }
 
     //When the screen is tapped.
@@ -90,13 +99,28 @@ public class Player : MonoBehaviour {
     //Reels in the hook.
     void ReelInHook()
     {
-        if (this.connectedHook != null && this.joint != null) {
-            if (this.joint.distance > this.ropeLength)
-            {
-                this.joint.distance -= this.ropeSpeed;
-                if (this.joint.distance <= this.ropeLength) this.joint.distance = this.ropeLength;
-            }
+        if (this.joint.distance > this.ropeLength)
+        {
+            this.joint.distance -= this.ropeSpeed;
+            if (this.joint.distance <= this.ropeLength) this.joint.distance = this.ropeLength;
         }
+    }
+
+    void MakeRope()
+    {
+        GameObject r = this.rope;
+
+        //Set the position, the scale (to the wall), and the angle of the rope.
+        r.transform.position = new Vector3(this.transform.position.x, this.transform.position.y, this.transform.position.z);
+        r.transform.localScale = new Vector3(r.transform.localScale.x, this.joint.distance, r.transform.localScale.z);
+        float angle = Mathf.Atan2(this.joint.connectedBody.transform.position.y - r.transform.position.y, this.joint.connectedBody.transform.position.x - r.transform.position.x); //Angle to mouse
+        r.transform.rotation = Quaternion.Euler(0, 0, angle*Mathf.Rad2Deg - 90);
+
+
+        //Here we set the material tile scaling to match the rope length.
+        Vector2 scale = ropeRenderer.material.mainTextureScale;
+        scale.y = r.transform.localScale.y;
+        ropeRenderer.material.mainTextureScale = scale;
     }
 
     void OnTriggerEnter2D(Collider2D coll)
