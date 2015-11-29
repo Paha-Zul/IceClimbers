@@ -9,11 +9,9 @@ public class Player : MonoBehaviour {
 
     private bool aTap;
     private Vector3 touchPos;
-    private float distToHook;
+    private float distToHook, touchDownTime, holdDelay = 0.2f, bonusRopeSpeed, bonusRopeLength;
     private DistanceJoint2D joint;
     private Hook connectedHook;
-    private float touchDownTime;
-    private float holdDelay = 0.2f;
     private GameObject rope;
     private MeshRenderer ropeRenderer;
 
@@ -22,7 +20,12 @@ public class Player : MonoBehaviour {
         this.joint = GetComponent<DistanceJoint2D>();
         this.rope = Instantiate(this.ropePrefab);
         this.ropeRenderer = this.rope.transform.GetChild(0).GetComponent<MeshRenderer>();
-	}
+
+        this.bonusRopeSpeed = PlayerPrefs.GetFloat("RopeSpeed");
+        this.bonusRopeLength = PlayerPrefs.GetFloat("RopeLength");
+        this.ropeSpeed = this.bonusRopeSpeed == 0 ? this.ropeSpeed : this.ropeSpeed * (1+this.bonusRopeSpeed);
+        this.ropeLength = this.bonusRopeLength == 0 ? this.ropeLength : this.ropeLength - this.bonusRopeLength;
+    }
 	
 	// Update is called once per frame
 	void Update () {

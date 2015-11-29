@@ -2,12 +2,15 @@
 using System.Collections;
 
 public class Shard : MonoBehaviour {
+    public GameLevel gameLevel { get; set; }
+    public int num { get; set; }
+
     private Rigidbody2D rigidBody;
 
     private float startTime;
+    private float speed = 2;
     private bool started = false;
     private Vector3 originalPosition;
-    public GameLevel gameLevel {get; set;}
 
 	// Use this for initialization
 	void Start () {
@@ -20,14 +23,24 @@ public class Shard : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-	    if(!this.started && Time.time > this.startTime)
-        {
+	    if(!this.started && Time.time > this.startTime){
+            //If we are not started but our time is ready!
             this.started = true;
-            this.rigidBody.isKinematic = false;
+            if(GameLevel.levelType == GameLevel.LevelType.Normal) this.rigidBody.isKinematic = false;
+            else {
+                float bonusSpeed = 0.001f * num;
+                float x = Mathf.Cos(this.transform.rotation.z+(-90*Mathf.Deg2Rad)) * (this.speed + bonusSpeed);
+                float y = Mathf.Sin(this.transform.rotation.z+(90*Mathf.Deg2Rad)) * -(this.speed + bonusSpeed);
+                this.rigidBody.velocity = new Vector2(x, y);
+            }
             this.transform.position = this.originalPosition;
-        }else if (!this.started)
-        {
+
+        }else if (!this.started){
+            //If we are not started and we're not ready to start yet.
             shake();
+        } else {
+            //If we are started...
+            
         }
 
 	}
@@ -39,6 +52,7 @@ public class Shard : MonoBehaviour {
 
     void OnBecameInvisible()
     {
+        //When it falls of the screen, increase score and destroy the game object.
         this.gameLevel.IncreaseScore(1);
         Destroy(this.gameObject);
     }
