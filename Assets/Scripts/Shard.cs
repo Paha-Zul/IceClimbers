@@ -6,10 +6,13 @@ public class Shard : MonoBehaviour {
 
     private float startTime;
     private bool started = false;
+    private Vector3 originalPosition;
+    public GameLevel gameLevel {get; set;}
 
 	// Use this for initialization
 	void Start () {
         //Get the rigibody, initially set to kinematic, set start time.
+        this.originalPosition = this.transform.position;
         this.rigidBody = GetComponent<Rigidbody2D>();
         this.rigidBody.isKinematic = true;
         this.startTime = Time.time + 1;
@@ -21,15 +24,22 @@ public class Shard : MonoBehaviour {
         {
             this.started = true;
             this.rigidBody.isKinematic = false;
+            this.transform.position = this.originalPosition;
+        }else if (!this.started)
+        {
+            shake();
         }
-
-        //Need to erase this thing when if goes off screen.
 
 	}
 
+    void shake()
+    {
+        this.transform.position = new Vector3(Random.Range(-0.05f, 0.05f) + this.originalPosition.x, this.originalPosition.y, this.originalPosition.z);
+    }
+
     void OnBecameInvisible()
     {
-        GameLevel.IncreaseScore(1);
+        this.gameLevel.IncreaseScore(1);
         Destroy(this.gameObject);
     }
 }

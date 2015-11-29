@@ -26,4 +26,9 @@ public class Hook : MonoBehaviour {
         this.transform.parent = coll.transform;
         this.GetComponent<Rigidbody2D>().isKinematic = true;
     }
+
+    void OnBecameInvisible()
+    {
+        Destroy(this.gameObject);
+    }
 }

@@ -53,18 +53,13 @@ public class Player : MonoBehaviour {
         if (this.aTap)
             this.OnScreenTap();
 
-        Vector3 pos = Camera.main.WorldToScreenPoint(this.transform.position);
-        if (pos.y < 0)
-        {
-            levelScript.GameOver();
-            Time.timeScale = 0;
-        }
-
         if (this.connectedHook != null && this.joint != null)
         {
             ReelInHook();
-            MakeRope();
         }
+
+        if(this.joint != null)
+            MakeRope();
     }
 
     //When the screen is tapped.
@@ -109,11 +104,12 @@ public class Player : MonoBehaviour {
     void MakeRope()
     {
         GameObject r = this.rope;
+        Vector2 connAnchor = this.joint.connectedBody == null ? this.joint.connectedAnchor : this.joint.connectedBody.position;
 
         //Set the position, the scale (to the wall), and the angle of the rope.
         r.transform.position = new Vector3(this.transform.position.x, this.transform.position.y, this.transform.position.z);
         r.transform.localScale = new Vector3(r.transform.localScale.x, this.joint.distance, r.transform.localScale.z);
-        float angle = Mathf.Atan2(this.joint.connectedBody.transform.position.y - r.transform.position.y, this.joint.connectedBody.transform.position.x - r.transform.position.x); //Angle to mouse
+        float angle = Mathf.Atan2(connAnchor.y - r.transform.position.y, connAnchor.x - r.transform.position.x); //Angle to mouse
         r.transform.rotation = Quaternion.Euler(0, 0, angle*Mathf.Rad2Deg - 90);
 
 
@@ -121,6 +117,11 @@ public class Player : MonoBehaviour {
         Vector2 scale = ropeRenderer.material.mainTextureScale;
         scale.y = r.transform.localScale.y;
         ropeRenderer.material.mainTextureScale = scale;
+    }
+
+    public bool isFalling()
+    {
+        return this.joint == null;
     }
 
     void OnTriggerEnter2D(Collider2D coll)
@@ -133,5 +134,11 @@ public class Player : MonoBehaviour {
             //joint.connectedBody = null;
             //joint.distance = 9999999;
         }
+    }
+
+    void OnBecameInvisible()
+    {
+        levelScript.GameOver();
+        Destroy(this.gameObject);
     }
 }
