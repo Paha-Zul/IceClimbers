@@ -5,19 +5,22 @@ public class Shard : MonoBehaviour {
     public GameLevel gameLevel { get; set; }
     public int num { get; set; }
 
-    private Rigidbody2D rigidBody;
+    public Rigidbody2D rigidBody { get; set; }
 
     private float startTime;
     private float speed = 2;
     private bool started = false;
     private Vector3 originalPosition;
 
-	// Use this for initialization
-	void Start () {
-        //Get the rigibody, initially set to kinematic, set start time.
-        this.originalPosition = this.transform.position;
+    void Awake() {
         this.rigidBody = GetComponent<Rigidbody2D>();
         this.rigidBody.isKinematic = true;
+    }
+
+    // Use this for initialization
+    void Start () {
+        //Get the rigibody, initially set to kinematic, set start time.
+        this.originalPosition = this.transform.position;
         this.startTime = Time.time + 1;
 	}
 	
@@ -26,7 +29,7 @@ public class Shard : MonoBehaviour {
 	    if(!this.started && Time.time > this.startTime){
             //If we are not started but our time is ready!
             this.started = true;
-            if(GameLevel.levelType == GameLevel.LevelType.Normal) this.rigidBody.isKinematic = false;
+            if(GameLevel.levelType == GameLevel.LevelType.Normal || GameLevel.levelType == GameLevel.LevelType.Double) this.rigidBody.isKinematic = false;
             else {
                 float bonusSpeed = 0.001f * num;
                 float x = Mathf.Cos(this.transform.rotation.z+(-90*Mathf.Deg2Rad)) * (this.speed + bonusSpeed);

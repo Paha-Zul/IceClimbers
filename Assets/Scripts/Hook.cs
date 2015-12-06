@@ -25,6 +25,7 @@ public class Hook : MonoBehaviour {
         this.player.ConnectToHook(this);
         this.transform.parent = coll.transform;
         this.GetComponent<Rigidbody2D>().isKinematic = true;
+        this.GetComponent<AudioSource>().Play();
     }
 
     void OnBecameInvisible()
