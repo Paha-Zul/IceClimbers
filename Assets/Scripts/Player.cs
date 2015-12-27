@@ -1,15 +1,15 @@
 ﻿using UnityEngine;
-using System.Collections;
 
 public class Player : MonoBehaviour {
     public GameObject hook;
     public GameLevel levelScript;
     public GameObject ropePrefab;
-    public float ropeLength=2, ropeSpeed=0.1f;
+    public GameObject hardHat;
+    public float ropeLength, ropeSpeed;
 
     private bool aTap;
     private Vector3 touchPos;
-    private float distToHook, touchDownTime, holdDelay = 0.2f, bonusRopeSpeed, bonusRopeLength;
+    private float distToHook, touchDownTime, holdDelay = 0.2f;
     private DistanceJoint2D joint;
     private Hook connectedHook;
     private GameObject rope;
@@ -21,10 +21,17 @@ public class Player : MonoBehaviour {
         this.rope = Instantiate(this.ropePrefab);
         this.ropeRenderer = this.rope.transform.GetChild(0).GetComponent<MeshRenderer>();
 
-        this.bonusRopeSpeed = PlayerPrefs.GetFloat("RopeSpeed");
-        this.bonusRopeLength = PlayerPrefs.GetFloat("RopeLength");
-        this.ropeSpeed = this.bonusRopeSpeed == 0 ? this.ropeSpeed : this.ropeSpeed * (1+this.bonusRopeSpeed);
-        this.ropeLength = this.bonusRopeLength == 0 ? this.ropeLength : this.ropeLength - this.bonusRopeLength;
+        this.calculateBonuses();
+    }
+
+    /// <summary>
+    /// Calculates bonuses for the player from upgrades.
+    /// </summary>
+    void calculateBonuses()
+    {
+        this.ropeSpeed = Defaults.RopeSpeed + PlayerPrefs.GetInt("RopeSpeed") * Defaults.RopeSpeedIncrease;
+        this.ropeLength = Defaults.RopeLength + PlayerPrefs.GetInt("RopeLength") * Defaults.RopeLengthDecrease;
+        if (PlayerPrefs.GetInt("HardHat") == 0) this.hardHat.SetActive(false);
     }
 	
 	// Update is called once per frame
@@ -56,13 +63,12 @@ public class Player : MonoBehaviour {
         if (this.aTap)
             this.OnScreenTap();
 
-        if (this.connectedHook != null && this.joint != null)
-        {
+        if (this.connectedHook != null && this.joint != null){
             ReelInHook();
         }
 
         if(this.joint != null)
-            MakeRope();
+            DrawRope();
     }
 
     //When the screen is tapped.
@@ -104,17 +110,19 @@ public class Player : MonoBehaviour {
         }
     }
 
-    void MakeRope()
-    {
+    void DrawRope(){
         GameObject r = this.rope;
         Vector2 connAnchor = this.joint.connectedBody == null ? this.joint.connectedAnchor : this.joint.connectedBody.position;
+        float disToHook = this.joint.distance; //Initially set as joint distance
+        if(this.joint.connectedBody != null) //If the connect body is not null, get the distance to that.
+            disToHook = Vector3.Distance(this.joint.connectedBody.transform.position, this.transform.position);
 
         //Set the position, the scale (to the wall), and the angle of the rope.
         r.transform.position = new Vector3(this.transform.position.x, this.transform.position.y, this.transform.position.z);
-        r.transform.localScale = new Vector3(r.transform.localScale.x, this.joint.distance, r.transform.localScale.z);
+        r.transform.localScale = new Vector3(r.transform.localScale.x, disToHook, r.transform.localScale.z);
+
         float angle = Mathf.Atan2(connAnchor.y - r.transform.position.y, connAnchor.x - r.transform.position.x); //Angle to mouse
         r.transform.rotation = Quaternion.Euler(0, 0, angle*Mathf.Rad2Deg - 90);
-
 
         //Here we set the material tile scaling to match the rope length.
         Vector2 scale = ropeRenderer.material.mainTextureScale;
@@ -122,20 +130,23 @@ public class Player : MonoBehaviour {
         ropeRenderer.material.mainTextureScale = scale;
     }
 
-    public bool isFalling()
-    {
+    public bool isFalling(){
         return this.joint == null;
     }
 
-    void OnTriggerEnter2D(Collider2D coll)
-    {
-        if(coll.gameObject.name == "Shard")
+    void OnTriggerEnter2D(Collider2D coll){
+        if(coll.gameObject.name == "Shard" || coll.gameObject.name == "Bird")
         {
+            //If we have a hard hat, break it but don't kill us!
+            if (this.hardHat.activeSelf){
+                this.hardHat.SetActive(false);
+                this.GetComponent<AudioSource>().Play();
+                return;
+            }
+
             DistanceJoint2D joint = this.GetComponent<DistanceJoint2D>();
             Destroy(joint);
             this.connectedHook = null;
-            //joint.connectedBody = null;
-            //joint.distance = 9999999;
         }
     }
 

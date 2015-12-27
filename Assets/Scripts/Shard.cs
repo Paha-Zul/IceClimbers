@@ -2,7 +2,6 @@
 using System.Collections;
 
 public class Shard : MonoBehaviour {
-    public GameLevel gameLevel { get; set; }
     public int num { get; set; }
 
     public Rigidbody2D rigidBody { get; set; }
@@ -48,15 +47,14 @@ public class Shard : MonoBehaviour {
 
 	}
 
-    void shake()
-    {
+    void shake(){
         this.transform.position = new Vector3(Random.Range(-0.05f, 0.05f) + this.originalPosition.x, this.originalPosition.y, this.originalPosition.z);
     }
 
     void OnBecameInvisible()
     {
         //When it falls of the screen, increase score and destroy the game object.
-        this.gameLevel.IncreaseScore(1);
+        GameLevel.dodgedShard();
         Destroy(this.gameObject);
     }
 }

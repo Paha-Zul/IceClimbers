@@ -19,13 +19,11 @@ public class ButtonFunctions : MonoBehaviour {
         Application.LoadLevel("Game");
     }
 
-    public void Restart()
-    {
+    public void Restart(){
         Application.LoadLevel("Game");
     }
 
-    public void LoadMainMenu()
-    {
+    public void LoadMainMenu(){
         Application.LoadLevel("MainMenu");
     }
 
@@ -72,6 +70,8 @@ public class ButtonFunctions : MonoBehaviour {
     }
 
     public void Purchase(string type) {
-        MainMenu.inst.MakePurchase(type);
+        if(MainMenu.inst.MakePurchase(type)) {
+            this.GetComponent<AudioSource>().Play();
+        }
     }
 }

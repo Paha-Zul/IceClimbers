@@ -15,6 +15,8 @@ public class Hook : MonoBehaviour {
         this.dirX = (Mathf.Cos(angle)*Mathf.Rad2Deg) * travelSpeed;
         this.dirY = (Mathf.Sin(angle)*Mathf.Rad2Deg) * travelSpeed;
 
+        if(dirX < 0) this.transform.localScale = new Vector3(-this.transform.localScale.x, this.transform.localScale.y, this.transform.localScale.z);
+
         this.GetComponent<Rigidbody2D>().velocity = new Vector3(dirX, dirY, 0);
         Physics2D.IgnoreCollision(player.GetComponent<BoxCollider2D>(), this.GetComponent<CircleCollider2D>());
         Physics2D.IgnoreLayerCollision(8, 8); 
