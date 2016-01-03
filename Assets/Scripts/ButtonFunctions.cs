@@ -1,5 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
+using GooglePlayGames;
+using AppodealAds.Unity.Api;
 
 public class ButtonFunctions : MonoBehaviour {
 	// Use this for initialization
@@ -13,9 +15,18 @@ public class ButtonFunctions : MonoBehaviour {
 	}
 
     public void Play(string type) {
-        if(type == "normal") GameLevel.levelType = GameLevel.LevelType.Normal;
-        if(type == "angled") GameLevel.levelType = GameLevel.LevelType.Angled;
-        if(type == "double") GameLevel.levelType = GameLevel.LevelType.Double;
+        if (type == "normal") {
+            GameLevel.levelType = GameLevel.LevelType.Normal;
+            if(PlayGamesPlatform.Instance.IsAuthenticated()) PlayGamesPlatform.Instance.Events.IncrementEvent("CgkIzpi-qqMDEAIQBw", 1);
+        }
+        if (type == "angled") {
+            GameLevel.levelType = GameLevel.LevelType.Angled;
+            if (PlayGamesPlatform.Instance.IsAuthenticated()) PlayGamesPlatform.Instance.Events.IncrementEvent("CgkIzpi-qqMDEAIQCA", 1);
+        }
+        if (type == "double") {
+            GameLevel.levelType = GameLevel.LevelType.Double;
+            if (PlayGamesPlatform.Instance.IsAuthenticated()) PlayGamesPlatform.Instance.Events.IncrementEvent("CgkIzpi-qqMDEAIQCQ", 1);
+        }
         Application.LoadLevel("Game");
     }
 
@@ -39,7 +50,7 @@ public class ButtonFunctions : MonoBehaviour {
     /// Moves from the main menu to the item panel.
     /// </summary>
     public void ChooseItems() {
-        MainMenu.inst.loadItemData();
+        MainMenu.inst.loadItemDataInfoIntoItemStore();
         MainMenu.inst.mainMenuPanelRectTransform.position = MainMenu.inst.menuRoot.transform.position; //Move the main menu out of the way
         MainMenu.inst.itemPanelRectTransform.position = MainMenu.inst.mainPanelRectTransform.position; //Move the item panel in.
     }
@@ -67,6 +78,15 @@ public class ButtonFunctions : MonoBehaviour {
 
         //Move the mainMenu in.
         MainMenu.inst.mainMenuPanelRectTransform.position = MainMenu.inst.mainPanelRectTransform.position;
+    }
+
+    public void OpenLeaderboards() {
+        if(PlayGamesPlatform.Instance.IsAuthenticated())
+            Social.ShowLeaderboardUI();
+    }
+
+    public void PlayRewardVideo() {
+        Appodeal.show(Appodeal.REWARDED_VIDEO);
     }
 
     public void Purchase(string type) {

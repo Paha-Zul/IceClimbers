@@ -3,7 +3,8 @@ using System.Collections;
 
 public class Hook : MonoBehaviour {
     public Player player;
-    public float angle, travelSpeed, windSpeed;
+    public float angle, windSpeed;
+    public float hookSpeed { set; get; }
 
     [HideInInspector]
     public Rigidbody2D rigidBody;
@@ -12,8 +13,8 @@ public class Hook : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
         this.rigidBody = this.gameObject.GetComponent<Rigidbody2D>();
-        this.dirX = (Mathf.Cos(angle)*Mathf.Rad2Deg) * travelSpeed;
-        this.dirY = (Mathf.Sin(angle)*Mathf.Rad2Deg) * travelSpeed;
+        this.dirX = (Mathf.Cos(angle)*Mathf.Rad2Deg) * hookSpeed;
+        this.dirY = (Mathf.Sin(angle)*Mathf.Rad2Deg) * hookSpeed;
 
         if(dirX < 0) this.transform.localScale = new Vector3(-this.transform.localScale.x, this.transform.localScale.y, this.transform.localScale.z);
 
@@ -24,14 +25,15 @@ public class Hook : MonoBehaviour {
 	
     void OnCollisionEnter2D(Collision2D coll)
     {
-        this.player.ConnectToHook(this);
-        this.transform.parent = coll.transform;
-        this.GetComponent<Rigidbody2D>().isKinematic = true;
-        this.GetComponent<AudioSource>().Play();
+        if (coll.gameObject.CompareTag("Wall")) {
+            this.player.ConnectToHook(this);
+            this.transform.parent = coll.transform;
+            this.GetComponent<Rigidbody2D>().isKinematic = true;
+            this.GetComponent<AudioSource>().Play();
+        }
     }
 
-    void OnBecameInvisible()
-    {
+    void OnBecameInvisible(){
         Destroy(this.gameObject);
     }
 }

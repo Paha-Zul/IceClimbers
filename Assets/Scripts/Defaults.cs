@@ -5,13 +5,15 @@ public class Defaults  {
     public readonly static string CoinPrefString = "Coins";
     public readonly static string RopeLengthPrefString = "RopeLength";
     public readonly static string RopeSpeedPrefString = "RopeSpeed";
-    public readonly static string BouncinessPrefString = "Boundiness";
+    public readonly static string BouncinessPrefString = "Bounciness";
+    public readonly static string HookSpeedPrefString = "HookSpeed";
 
     public readonly static float RopeLength = 4;
     public readonly static float RopeSpeed = 0.05f;
     public readonly static float Bounciness = 0.3f;
-    public readonly static float RopeLengthDecrease = -0.1f, RopeSpeedIncrease = 0.1f, BouncinessIncrease = -0.01f;
+    public readonly static float RopeLengthDecrease = -0.1f, RopeSpeedIncrease = 0.05f, BouncinessDecrease = -0.01f, HookSpeedIncrease = 0.01f;
     public readonly static float WallSpeed = 0.02f;
+    public readonly static float HookSpeed = 0.2f;
 
     public readonly static float InitialShardSpawnSpeed = 3f; //Initial spawn rate of ice shards
     public readonly static float ShardSpawnIncreaseIncreaseInterval = 8f; //Increases the spawn interval every x amount of time (in seconds)

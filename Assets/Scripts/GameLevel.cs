@@ -2,12 +2,16 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
+using UnityEngine.SocialPlatforms;
+using GooglePlayGames;
+using AppodealAds.Unity.Api;
 
 public class GameLevel : MonoBehaviour {
     public enum LevelType { Normal, Angled, Double }
 
-    public Text _text, scoreText, coinsText;
-    public GameObject rightWall, leftWall, player, shard, bird, scorePanel, canvas, spawns, underSpawns, leftBirdSpawn, rightBirdSpawn; //Our prefabs
+    public Text _text, coinsText, newScore, oldScore;
+    public GameObject scorePanel, canvas;
+    public GameObject rightWall, leftWall, player, shard, bird, spawns, underSpawns, leftBirdSpawn, rightBirdSpawn, highScorePanel; //Our prefabs
     public GameObject birdWarning;
     public float wallHeight;
 
@@ -61,8 +65,7 @@ public class GameLevel : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-        if (!paused)
-        {
+        if (!paused){
             this.SpawnShards();
             this.spawnBirds();
 
@@ -79,8 +82,8 @@ public class GameLevel : MonoBehaviour {
 
             //If the topmost walls are about to pass under the top of the screen, spawn more.
             if (this.lastAddedWalls[0].transform.position.y <= this.vertExtent){
-                walls.Add(this.lastAddedWalls[0] = (GameObject)Instantiate(leftWall, new Vector3(-this.horzExtent, this.vertExtent + wallHeight, 0), Quaternion.identity)); //Spawn on the left
-                walls.Add(this.lastAddedWalls[1] = (GameObject)Instantiate(rightWall, new Vector3(this.horzExtent, this.vertExtent + wallHeight, 0), Quaternion.identity)); //Spawn on the right
+                walls.Add(this.lastAddedWalls[0] = (GameObject)Instantiate(leftWall, new Vector3(-this.horzExtent, this.vertExtent + wallHeight * 0.98f, 0), Quaternion.identity)); //Spawn on the left
+                walls.Add(this.lastAddedWalls[1] = (GameObject)Instantiate(rightWall, new Vector3(this.horzExtent, this.vertExtent + wallHeight * 0.98f, 0), Quaternion.identity)); //Spawn on the right
             }
 
             this.IncreaseShardSpawn();
@@ -133,6 +136,9 @@ public class GameLevel : MonoBehaviour {
         }
     }
 
+    /// <summary>
+    /// Spawns birds when the right conditions are met.
+    /// </summary>
     public void spawnBirds() {
         if(Time.time > this.nextBirdSpawn && this.shardsSpawnedSoFar >= Defaults.ShardsDodgedBeforeBirdSpawn) {
             this.nextBirdSpawn = Time.time + this.birdSpawnSpeed;
@@ -152,9 +158,12 @@ public class GameLevel : MonoBehaviour {
         }
     }
 
+    public void OnDestroy() {
+        PlayerPrefs.SetInt("hash", SecretStuff.getHash2());
+    }
+
     //Games over!
-    public void GameOver()
-    {
+    public void GameOver(){
         paused = true;
         Time.timeScale = 0;
 
@@ -168,8 +177,33 @@ public class GameLevel : MonoBehaviour {
         this.scorePanel.GetComponent<RectTransform>().position = new Vector2(canvasTransform.position.x, canvasTransform.position.y);
 
         //Set the text for score and coins.
-        this.scoreText.text = overallScore.ToString();
         this.coinsText.text = newCoins.ToString();
+
+        this.showHighScore();
+    }
+
+    public void showHighScore() {
+        //Get the previous highscore
+        int highScore = PlayerPrefs.GetInt("Highscore");
+
+        //Display the highscores
+        this.oldScore.text = "" + highScore;
+        this.newScore.text = "" + overallScore;
+
+        //If the new score is not higher than the old one, hide the "NEW HIGH SCORE!" text.
+        if (overallScore <= highScore)
+            highScorePanel.transform.GetChild(0).gameObject.SetActive(false);
+        else {
+            //Set the new highscore
+            PlayerPrefs.SetInt("Highscore", overallScore);
+        }
+
+        //If we're authenticated, submit score!
+        if (PlayGamesPlatform.Instance.IsAuthenticated()) {
+            Social.ReportScore(overallScore, "CgkIzpi-qqMDEAIQBg", (bool success) => {
+                // handle success or failure
+            });
+        }
     }
 
     /// <summary>
@@ -240,5 +274,6 @@ public class GameLevel : MonoBehaviour {
 
     void OnApplicationQuit() {
         PlayerPrefs.SetInt("hash", SecretStuff.getHash2());
+        
     }
 }

@@ -2,18 +2,22 @@
 using System.Collections;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using UnityEngine.SocialPlatforms;
+using AppodealAds.Unity.Api;
+using GooglePlayGames;
 
 public class MainMenu : MonoBehaviour {
     public Text coinText;
     public GameObject menuRoot, mainPanel, startPanel, gameTypePanel, itemPanel, canvas;
-    public Text currSpeed, currLength, currBounciness, currHardHat, costSpeed, costLength, costBounciness, costHardHat;
+    public Text currSpeed, currLength, currBounciness, currHardHat, currHookSpeed, currBirdShield;
+    public Text costSpeed, costLength, costBounciness, costHardHat, costHookSpeed, costBirdShield;
 
     [HideInInspector]
     public RectTransform mainPanelRectTransform, mainMenuPanelRectTransform, gameTypePanelRectTransform, itemPanelRectTransform, canvasRectTransform;
 
     public static MainMenu inst { get; private set; }
 
-    private Dictionary<string, Upgrade> upgradeMap = new Dictionary<string, Upgrade>();
+    private static bool startedOnce = false;
 
     // Use this for initialization
     void Start() {
@@ -33,6 +37,10 @@ public class MainMenu : MonoBehaviour {
 
         //this.quickReset();
         this.populateUpgrades();
+
+        Appodeal.show(Appodeal.BANNER_BOTTOM);
+        if(startedOnce) Appodeal.show(Appodeal.INTERSTITIAL);
+        startedOnce = true;
     }
 
     private void quickReset(){
@@ -43,16 +51,19 @@ public class MainMenu : MonoBehaviour {
     }
 
     private void populateUpgrades() {
-        int speed = PlayerPrefs.GetInt(Defaults.RopeLengthPrefString);
-        int length = PlayerPrefs.GetInt(Defaults.RopeSpeedPrefString);
-        int bounciness = PlayerPrefs.GetInt(Defaults.BouncinessPrefString);
-        int hardhat = PlayerPrefs.GetInt("HardHat");
-        int coins = PlayerPrefs.GetInt(Defaults.CoinPrefString);
+        int currRopeSpeed = PlayerPrefs.GetInt(Defaults.RopeSpeedPrefString);
+        int currRopeLength = PlayerPrefs.GetInt(Defaults.RopeLengthPrefString);
+        int currBounciness = PlayerPrefs.GetInt(Defaults.BouncinessPrefString);
+        int currHardHat = PlayerPrefs.GetInt("HardHat");
+        int currHookSpeed = PlayerPrefs.GetInt("HookSpeed");
+        //int coins = PlayerPrefs.GetInt(Defaults.CoinPrefString);
 
-        upgradeMap.Add("ropespeed", new Upgrade("RopeSpeed", 10, 1, 10, costSpeed, currSpeed));
-        upgradeMap.Add("ropelength", new Upgrade("RopeLength", 10, 1, 20, costLength, currLength));
-        upgradeMap.Add("bounciness", new Upgrade("Bounciness", 10, 1, 10, costBounciness, currBounciness));
-        upgradeMap.Add("hardhat", new Upgrade("HardHat", 50, 10, 1, costHardHat, currHardHat));
+        Upgrades.refreshOrAdd("ropespeed", "RopeSpeed", 10, 1, Defaults.maxRopeSpeedUpgrades, currRopeSpeed, costSpeed, currSpeed);
+        Upgrades.refreshOrAdd("ropelength", "RopeLength", 10, 1, Defaults.MaxRopeLengthUpgrades, currRopeLength, costLength, currLength);
+        Upgrades.refreshOrAdd("bounciness", "Bounciness", 10, 1, Defaults.maxBouncinessUpgrade, currBounciness, this.costBounciness, this.currBounciness);
+        Upgrades.refreshOrAdd("hardhat", "HardHat", 50, 0, 1, currHardHat, this.costHardHat, this.currHardHat);
+        Upgrades.refreshOrAdd("birdshield", "BirdShield", 50, 0, 1, currHardHat, this.costBirdShield, this.currBirdShield);
+        Upgrades.refreshOrAdd("hookspeed", "HookSpeed", 10, 1, Defaults.maxHookSpeedUpgrade, currHookSpeed, this.costHookSpeed, this.currHookSpeed);
     }
 
     /// <summary>
@@ -63,14 +74,17 @@ public class MainMenu : MonoBehaviour {
         int ropeLengthUps = PlayerPrefs.GetInt(Defaults.RopeLengthPrefString);
         int ropeSpeedUps = PlayerPrefs.GetInt(Defaults.RopeSpeedPrefString);
         int bouncinessUps = PlayerPrefs.GetInt(Defaults.BouncinessPrefString);
+        int hookSpeedUps = PlayerPrefs.GetInt(Defaults.HookSpeedPrefString);
 
         if (ropeLengthUps > Defaults.MaxRopeLengthUpgrades) ropeLengthUps = Defaults.MaxRopeLengthUpgrades;
         if (ropeSpeedUps > Defaults.maxRopeSpeedUpgrades) ropeSpeedUps = Defaults.maxRopeSpeedUpgrades;
         if (bouncinessUps > Defaults.maxBouncinessUpgrade) bouncinessUps = Defaults.maxBouncinessUpgrade;
+        if (bouncinessUps > Defaults.maxBouncinessUpgrade) hookSpeedUps = Defaults.maxHookSpeedUpgrade;
 
         PlayerPrefs.SetInt(Defaults.RopeLengthPrefString, ropeLengthUps);
         PlayerPrefs.SetInt(Defaults.RopeSpeedPrefString, ropeSpeedUps);
         PlayerPrefs.SetInt(Defaults.BouncinessPrefString, bouncinessUps);
+        PlayerPrefs.SetInt(Defaults.HookSpeedPrefString, hookSpeedUps);
     }
 
     /// <summary>
@@ -99,33 +113,12 @@ public class MainMenu : MonoBehaviour {
     public bool MakePurchase(string type) {
         int coins = PlayerPrefs.GetInt("Coins");
         int amountSpent = 0;
-        int curr = 0;
         int increase = 0;
 
-        Upgrade upgrade;
-        this.upgradeMap.TryGetValue(type, out upgrade);
-        curr = PlayerPrefs.GetInt(upgrade.prefName);
+        Upgrades.Upgrade upgrade = Upgrades.getUpgrade(type);
+        
         increase = 1;
-        amountSpent = upgrade.cost + upgrade.costIncr * curr;
-
-        ////Set some variables based on what ww clicked.
-        //if(type == "ropespeed") {
-        //    pref = "RopeSpeed";
-        //    increase = 1;
-        //    amountSpent = Defaults.RopeSpeedCost;
-        //} else if(type == "ropelength") {
-        //    pref = "RopeLength";
-        //    increase = 1;
-        //    amountSpent = Defaults.RopeLengthCost;
-        //} else if(type == "bounciness") {
-        //    pref = "Bounciness";
-        //    increase = 1;
-        //    amountSpent = Defaults.BouncinessCost;
-        //}else if (type == "hardhat"){
-        //    pref = "HardHat";
-        //    increase = 1;
-        //    amountSpent = Defaults.HardHatCost;
-        //}
+        amountSpent = upgrade.cost + upgrade.costIncr * upgrade.curr;
 
         //If we don't have enough coins, return false
         if (coins - amountSpent < 0)
@@ -134,10 +127,6 @@ public class MainMenu : MonoBehaviour {
         //Increase our value, set it!
         int val = PlayerPrefs.GetInt(upgrade.prefName);
         int limit = upgrade.max;
-        //if (pref == "RopeSpeed") limit = Defaults.maxRopeSpeedUpgrades;
-        //else if (pref == "RopeLength") limit = Defaults.MaxRopeLengthUpgrades;
-        //else if (pref == "Bounciness") limit = Defaults.maxBouncinessUpgrade;
-        //else if (pref == "HardHat") limit = Defaults.maxHardHatUpgrade;
 
         //If we are going past the limit, return false.
         if (val + increase > limit)
@@ -145,6 +134,7 @@ public class MainMenu : MonoBehaviour {
 
         val += increase;
         PlayerPrefs.SetInt(upgrade.prefName, val);
+        upgrade.curr = val;
 
         //Refresh the items/text
         PlayerPrefs.SetInt("Coins", coins - amountSpent);
@@ -156,29 +146,48 @@ public class MainMenu : MonoBehaviour {
     }
 
     public void refreshItem(string pref) {
-        Upgrade upgrade;
-        this.upgradeMap.TryGetValue(pref, out upgrade);
-        upgrade.costText.text = "" + upgrade.cost + upgrade.costIncr * upgrade.costIncr;
+        Upgrades.Upgrade upgrade = Upgrades.getUpgrade(pref);
+        upgrade.costText.text = "" + (upgrade.cost + upgrade.costIncr * upgrade.curr).ToString();
         upgrade.currText.text = PlayerPrefs.GetInt(upgrade.prefName) + "/" + upgrade.max;
     }
 
-    public void loadItemData() {
-        Upgrade upgrade;
-        this.upgradeMap.TryGetValue("bounciness", out upgrade);
-        this.costBounciness.text = "" + upgrade.cost + upgrade.costIncr * upgrade.costIncr;
-        this.currBounciness.text = PlayerPrefs.GetInt(upgrade.prefName) + "/" + upgrade.max;
+    /// <summary>
+    /// Loads/refreshes the entire item store.
+    /// </summary>
+    public void loadItemDataInfoIntoItemStore() {
+        foreach (KeyValuePair<string, Upgrades.Upgrade> entry in Upgrades.getDictionary()) {
+            // do something with entry.Value or entry.Key
+            entry.Value.costText.text = "" + (entry.Value.cost + entry.Value.costIncr * entry.Value.curr).ToString();
+            entry.Value.currText.text = entry.Value.curr + "/" + entry.Value.max;
+        }
 
-        this.upgradeMap.TryGetValue("ropelength", out upgrade);
-        this.costLength.text = "" + upgrade.cost + upgrade.costIncr * upgrade.costIncr;
-        this.currLength.text = PlayerPrefs.GetInt(upgrade.prefName) + "/" + Defaults.MaxRopeLengthUpgrades;
+        ////Bounciness
+        //upgrade = Upgrades.getUpgrade("bounciness");
+        //this.costBounciness.text = "" + (upgrade.cost + upgrade.costIncr * upgrade.curr).ToString();
+        //this.currBounciness.text = PlayerPrefs.GetInt(upgrade.prefName) + "/" + upgrade.max;
 
-        this.upgradeMap.TryGetValue("ropespeed", out upgrade);
-        this.costSpeed.text = "" + upgrade.cost + upgrade.costIncr * upgrade.costIncr;
-        this.currSpeed.text = PlayerPrefs.GetInt(upgrade.prefName) + "/" + Defaults.maxRopeSpeedUpgrades;
+        ////length
+        //upgrade = Upgrades.getUpgrade("ropelength");
+        //this.costLength.text = "" + (upgrade.cost + upgrade.costIncr * upgrade.curr).ToString();
+        //this.currLength.text = PlayerPrefs.GetInt(upgrade.prefName) + "/" + upgrade.max;
 
-        this.upgradeMap.TryGetValue("hardhat", out upgrade);
-        this.costHardHat.text = "" + upgrade.cost + upgrade.costIncr * upgrade.costIncr;
-        this.currHardHat.text = PlayerPrefs.GetInt(upgrade.prefName) + "/" + Defaults.maxHardHatUpgrade;
+        ////speed
+        //this.upgradeMap.TryGetValue("ropespeed", out upgrade);
+        //curr = PlayerPrefs.GetInt(upgrade.prefName);
+        //this.costSpeed.text = "" + (upgrade.cost + upgrade.costIncr * curr).ToString();
+        //this.currSpeed.text = PlayerPrefs.GetInt(upgrade.prefName) + "/" + upgrade.max;
+
+        ////hardhat
+        //this.upgradeMap.TryGetValue("hardhat", out upgrade);
+        //curr = PlayerPrefs.GetInt(upgrade.prefName);
+        //this.costHardHat.text = "" + (upgrade.cost + upgrade.costIncr * curr).ToString();
+        //this.currHardHat.text = PlayerPrefs.GetInt(upgrade.prefName) + "/" + upgrade.max;
+
+        ////hardhat
+        //this.upgradeMap.TryGetValue("hookspeed", out upgrade);
+        //curr = PlayerPrefs.GetInt(upgrade.prefName);
+        //upgrade.costText.text = "" + (upgrade.cost + upgrade.costIncr * curr).ToString();
+        //upgrade.currText.text = PlayerPrefs.GetInt(upgrade.prefName) + "/" + upgrade.max;
     }
 
     /// <summary>
@@ -201,22 +210,11 @@ public class MainMenu : MonoBehaviour {
         }
     }
 
-    void OnApplicationQuit() {
-        PlayerPrefs.SetInt("hash", SecretStuff.getHash2());
+    void OnDestroy() {
+        Appodeal.hide(Appodeal.BANNER_BOTTOM);
     }
 
-    public struct Upgrade {
-        public string prefName;
-        public int cost, costIncr, max;
-        public Text costText, currText;
-
-        public Upgrade(string prefName, int cost, int costIncr, int max, Text costText, Text currText) {
-            this.prefName = prefName;
-            this.cost = cost;
-            this.costIncr = costIncr;
-            this.max = max;
-            this.costText = costText;
-            this.currText = currText;
-        }
+    void OnApplicationQuit() {
+        PlayerPrefs.SetInt("hash", SecretStuff.getHash2());
     }
 }

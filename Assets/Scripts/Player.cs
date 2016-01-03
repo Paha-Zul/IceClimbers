@@ -5,7 +5,8 @@ public class Player : MonoBehaviour {
     public GameLevel levelScript;
     public GameObject ropePrefab;
     public GameObject hardHat;
-    public float ropeLength, ropeSpeed;
+    public GameObject birdShield;
+    public float ropeLength, ropeSpeed, hookSpeed;
 
     private bool aTap;
     private Vector3 touchPos;
@@ -31,7 +32,17 @@ public class Player : MonoBehaviour {
     {
         this.ropeSpeed = Defaults.RopeSpeed + PlayerPrefs.GetInt("RopeSpeed") * Defaults.RopeSpeedIncrease;
         this.ropeLength = Defaults.RopeLength + PlayerPrefs.GetInt("RopeLength") * Defaults.RopeLengthDecrease;
+        this.hookSpeed = Defaults.HookSpeed + PlayerPrefs.GetInt("HookSpeed") * Defaults.HookSpeedIncrease;
+
         if (PlayerPrefs.GetInt("HardHat") == 0) this.hardHat.SetActive(false);
+        if (PlayerPrefs.GetInt("BirdShield") == 0) this.birdShield.SetActive(false);
+
+        BoxCollider2D collider = this.GetComponent<BoxCollider2D>();
+
+        Upgrades.Upgrade up = Upgrades.getUpgrade("bounciness");
+        collider.sharedMaterial.bounciness = Defaults.Bounciness + up.curr * Defaults.BouncinessDecrease;
+        collider.enabled = false;
+        collider.enabled = true;
     }
 	
 	// Update is called once per frame
@@ -85,6 +96,7 @@ public class Player : MonoBehaviour {
         //Set some stuff.
         newHookComp.angle = angle;
         newHookComp.player = this;
+        newHookComp.hookSpeed = this.hookSpeed;
     }
 
     //Connects to a hook.
@@ -135,18 +147,26 @@ public class Player : MonoBehaviour {
     }
 
     void OnTriggerEnter2D(Collider2D coll){
-        if(coll.gameObject.name == "Shard" || coll.gameObject.name == "Bird")
-        {
-            //If we have a hard hat, break it but don't kill us!
-            if (this.hardHat.activeSelf){
+        bool isShard = coll.gameObject.name == "Shard";
+        bool isBird = coll.gameObject.name == "Bird";
+        if (isShard || isBird){
+            if(isShard && this.hardHat.activeSelf) { 
+                //If we have a hard hat, break it but don't kill us!
                 this.hardHat.SetActive(false);
                 this.GetComponent<AudioSource>().Play();
-                return;
+                PlayerPrefs.SetInt("HardHat", 0);
+            }else if(isBird && this.birdShield.activeSelf) {
+                //If we have a bird shield, don't kill us!
+                this.birdShield.SetActive(false);
+                this.GetComponent<AudioSource>().Play();
+                PlayerPrefs.SetInt("BirdShield", 0);
+                coll.gameObject.SendMessage("Kill");
+            } else {
+                //Otherwise, kill us!
+                DistanceJoint2D joint = this.GetComponent<DistanceJoint2D>();
+                Destroy(joint);
+                this.connectedHook = null;
             }
-
-            DistanceJoint2D joint = this.GetComponent<DistanceJoint2D>();
-            Destroy(joint);
-            this.connectedHook = null;
         }
     }
 
